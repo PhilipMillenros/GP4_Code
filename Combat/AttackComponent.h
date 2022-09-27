@@ -6,9 +6,9 @@
 
 #include "CoreMinimal.h"
 #include "Attack.h"
+#include "AutoTarget.h"
 #include "Components/ActorComponent.h"
 #include "GP4Team3/Character/SlimePawn.h"
-#include "GP4Team3/Enemy/EnemyCharacter.h"
 
 #include "AttackComponent.generated.h"
 
@@ -23,16 +23,17 @@ public:
 	UAttackComponent();
 	UPROPERTY()
 	ASlimePawn* SlimePawn;
-	
-	UPROPERTY(EditAnywhere)
-	AEnemyCharacter* CurrentTarget;
 
-	std::queue<Attack*>AttackQueue;
+	UPROPERTY()
+	UAutoTarget* AutoTarget;
+	std::queue<std::shared_ptr<Attack>>AttackQueue;
+	float CoolDownTime = 1.f;
+	float CurrentCoolDown = 0.f;
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 	
-
+	bool AttackIsReady();
 public:
 	void QueueDashAttack();
 	void QueueGroundSlam();

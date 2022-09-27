@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 
 
+
 // Sets default values for this component's properties
 UAutoTarget::UAutoTarget()
 {
@@ -28,8 +29,52 @@ void UAutoTarget::BeginPlay()
 	ensure(SlimePawn != nullptr);
 	Camera = Cast<UCameraComponent>(SlimePawn->GetComponentByClass(UCameraComponent::StaticClass()));
 	ensure(Camera != nullptr);
-	AttackComponent = Cast<UAttackComponent>(SlimePawn->GetComponentByClass(UAttackComponent::StaticClass()));
-	ensure(AttackComponent != nullptr);
+}
+
+void UAutoTarget::SelectEnemy()
+{
+	UKismetSystemLibrary::PrintString(GetWorld(),  FString::Printf( TEXT("Enemies: , %i"), Enemies.Num()), true, true, FLinearColor::Green, 0.f);
+	if(Enemies.Num() < 1)
+	{
+		CurrentTarget = nullptr;
+		return;
+	}
+	float ShortestSqrDistance = MaxRange * MaxRange;
+	float ClosestToCameraDirection = -1;
+	AEnemyCharacter* PreviousTarget = CurrentTarget;
+	for (int i = 0; i < Enemies.Num(); i++)
+	{
+		float SqrDistance = (SlimePawn->GetActorLocation() - Enemies[i]->GetActorLocation()).SquaredLength();
+		if(SqrDistance < ShortestSqrDistance) 
+		{
+			//In range
+			FVector CameraForward = Camera->GetForwardVector();
+			FVector DirectionToEnemy = (Enemies[i]->GetActorLocation() - Camera->GetComponentLocation()).GetSafeNormal();
+			float EnemyCameraDotProduct = FVector::DotProduct(CameraForward, DirectionToEnemy);
+			if(EnemyCameraDotProduct > ClosestToCameraDirection)
+			{
+				
+				ClosestToCameraDirection = EnemyCameraDotProduct;
+				
+				CurrentTarget = Enemies[i];
+			}
+		}
+	}
+	if(CurrentTarget != nullptr && CurrentTarget->Dead)
+	{
+		SlimePawn->OnRemoveTarget(CurrentTarget);
+		Enemies.RemoveSingle(CurrentTarget);
+		CurrentTarget = nullptr;
+		PreviousTarget = nullptr;
+	}
+	if(CurrentTarget != nullptr && PreviousTarget != CurrentTarget)
+	{
+		if(PreviousTarget != nullptr)
+		{
+			SlimePawn->OnRemoveTarget(PreviousTarget);
+		}
+		SlimePawn->OnSetTarget(CurrentTarget);
+	}
 }
 
 
@@ -37,29 +82,6 @@ void UAutoTarget::BeginPlay()
 void UAutoTarget::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	float shortestDistance = MaxRange;
-	AEnemyCharacter* enemy = nullptr;
-	int length = Enemies.Num();
-	for (int i = 0; i < length; i++)
-	{
-		if(Enemies[i] == nullptr)
-		{
-			Enemies.RemoveAt(i);
-		}
-	}
-	for (int i = 0; i < Enemies.Num(); i++)
-	{
-		float distance = FVector::Distance(Enemies[i]->GetActorLocation(), SlimePawn->GetActorLocation());
-		if(shortestDistance > distance)
-		{
-			enemy = Enemies[i];
-			shortestDistance = distance;
-		}
-	}
-	if(enemy != nullptr)
-	{
-		AttackComponent->CurrentTarget = enemy;
-		UKismetSystemLibrary::DrawDebugCapsule(GetWorld(), enemy->GetActorLocation(), 200, 90, FRotator::ZeroRotator, FLinearColor::Blue, 0.1f);
-	}
+	SelectEnemy();
 }
 

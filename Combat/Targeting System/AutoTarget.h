@@ -8,7 +8,6 @@
 #include "GP4Team3/Enemy/EnemyCharacter.h"
 #include "AutoTarget.generated.h"
 
-
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class GP4TEAM3_API UAutoTarget : public UActorComponent
 {
@@ -20,6 +19,8 @@ public:
 	UPROPERTY()
 	TArray<AEnemyCharacter*> Enemies = {};
 
+	
+	
 	UPROPERTY()
 	ASlimePawn* SlimePawn;
 
@@ -30,11 +31,16 @@ public:
 	UAttackComponent* AttackComponent;
 
 	UPROPERTY(EditDefaultsOnly)
-	float MaxRange = 10000.f;
+	float MaxRange = 4000.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	AEnemyCharacter* CurrentTarget;
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+
+	virtual void SelectEnemy();
 	
 public:
 	// Called every frame

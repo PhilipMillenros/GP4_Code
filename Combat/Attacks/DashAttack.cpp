@@ -4,47 +4,76 @@
 #include "Kismet/GameplayStatics.h"
 
 
-void DashAttack::ExecuteAttack(AEnemyCharacter* target, ASlimePawn* player)
+void DashAttack::AttackTick(AEnemyCharacter* target, ASlimePawn* player)
 {
+	if(!player->movementComp->IsDashing())
+	{
+		ExitAttack(target, player);
+		return;
+	}
+	if(target == nullptr)
+	{
+		return;
+	}
 	
+	TimeSinceAttackStarted += player->GetWorld()->DeltaTimeSeconds;
+	FVector PlayerPosition = player->GetActorLocation();
+	TArray<TEnumAsByte<EObjectTypeQuery>> traceObjectTypes;
+	traceObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+	
+	UClass* FilterClass = AActor::StaticClass();
+	TArray<AActor*> ActorsIgnore;
+	TArray<AActor*> OutEnemies;
+	ActorsIgnore.Add(player);
+	
+	UKismetSystemLibrary::SphereOverlapActors(player->GetWorld(), PlayerPosition, DashRadius, traceObjectTypes, FilterClass, ActorsIgnore, OutEnemies);
+	UKismetSystemLibrary::DrawDebugSphere(player->GetWorld(), PlayerPosition, DashRadius, 12, FLinearColor::White, 2);
+	for(int i = 0; i < OutEnemies.Num(); i++)
+	{
+		AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(OutEnemies[i]);
+		
+		if(Enemy != nullptr)
+		{
+			Enemy->KnockUp(DashForce, (Enemy->GetActorLocation() - PlayerPosition).GetSafeNormal() + FVector::UpVector);
+			Enemy->TakeDamage(Damage);
+			player->OnDashAttackHit();
+		}
+	}
+	if(TimeSinceAttackStarted > ExitTime)
+	{
+		ExitAttack(target, player);
+	}
+}
+
+void DashAttack::AttackStart(AEnemyCharacter* target, ASlimePawn* player)
+{
+	Attack::AttackStart(target, player);
+	player->movementComp->InputPressDash();
+	player->movementComp->InputReleaseDash();
+	player->OnDashAttack();
+}
+
+void DashAttack::ExitAttack(AEnemyCharacter* target, ASlimePawn* player)
+{
+	Attack::ExitAttack(target, player);
+}
+
+
+bool DashAttack::IsValidAttack(AEnemyCharacter* target, ASlimePawn* player)
+{
 	if(target == nullptr || player == nullptr)
 	{
-		ExitAttack();
-		return;
+		return false;
 	}
 	if(FVector::Distance(target->GetActorLocation(), player->GetActorLocation()) > Range)
 	{
-		ExitAttack();
-		return;
+		return false;
 	}
 	TimeSinceAttackStarted += player->GetWorld()->DeltaTimeSeconds;
 	if(TimeSinceAttackStarted > ExitTime)
 	{
-		ExitAttack();
+		return false;
 	}
-	
-	FVector Start = player->GetActorLocation();
-	FVector End = target->GetActorLocation();
-	float TotalSpeed = FMath::InterpEaseIn(0.f, Speed,  FMath::Clamp(TimeSinceAttackStarted / MaxSpeedTime, 0.f, 1.f), 2);
-	player->SetActorLocation(Start + (End - Start).GetSafeNormal() * TotalSpeed * player->GetWorld()->DeltaTimeSeconds);
-	if((End - Start).Length() < Offset)
-	{
-		target->TakeDamage(Damage);
-		bBouncing = true;
-		//target->FindComponentByClass<UPrimitiveComponent>()->AddImpulse((originLocation - player->GetActorLocation()).GetSafeNormal() * 50.f); Might use later
-		ExitAttack();
-	}
+	return true;
 }
 
-void DashAttack::OnAttack(AActor* target, ASlimePawn* player)
-{
-	player->movementComp->active = false;
-	UKismetSystemLibrary::DrawDebugSphere(player->GetWorld(), player->GetActorLocation(), Range, 24, FLinearColor::Green, 1.f);
-	originLocation = player->GetActorLocation();
-}
-
-void DashAttack::ExitAttack()
-{
-	Attack::ExitAttack();
-	
-}

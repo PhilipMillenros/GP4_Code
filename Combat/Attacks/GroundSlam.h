@@ -3,16 +3,34 @@
 
 class GroundSlam : public Attack
 {
-
-	virtual void OnAttack(AActor* target, ASlimePawn* player) override;
-	virtual void ExecuteAttack(AEnemyCharacter* target, ASlimePawn* player) override;
-	void Impact(ASlimePawn* player);
-	float fallSpeed = 2000.f;
-	float sweepLengthDownwards = 45.f;
-	float fallTimeLimit = 10.f;
-	float timer = 0.f;
-	float impactRadius = 450.f;
-	float impactForce = 45000.f;
-	float damage = 65.f;
+	float FallSpeed = 4000.f;
+	float MaxSpeed = 6000.f;
+	float Acceleration = 2000.f;
+	float SweepLengthDownwards = 45.f;
+	float FallTimeLimit = 10.f;
+	float Timer = 0.f;
+	float ImpactRadius = 450.f;
+	float ImpactForce = 25000.f;
+	float ImpactForceEnemies = 750;
+	float Damage = 35.f;
+	float SlimeDeformation = 450.f;
 	FVector PreviousPosition;
+	
+	FTimerHandle FixedTickHandle;
+	virtual void AttackStart(AEnemyCharacter* target, ASlimePawn* player) override;
+	
+	virtual void AttackTick(AEnemyCharacter* target, ASlimePawn* player) override;
+	
+	virtual void ExitAttack(AEnemyCharacter* target, ASlimePawn* player) override;
+	
+	void GroundSlamImpactPhysicsObjects(ASlimePawn* player);
+
+	void GroundSlamApplyDamageAndPhysics(ASlimePawn* player);
+
+	void ApplyDeformation(ASlimePawn* player);
+	
+	void Impact(ASlimePawn* player);
+
+	void GroundSlamFall(ASlimePawn* player);
 };
+

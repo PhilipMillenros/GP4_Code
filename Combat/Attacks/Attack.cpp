@@ -4,15 +4,15 @@
 #include "Attack.h"
 
 
-void Attack::OnAttack(AActor* target, ASlimePawn* player)
+void Attack::AttackStart(AEnemyCharacter* target, ASlimePawn* player)
 {
 }
 
-void Attack::ExecuteAttack(AEnemyCharacter* target, ASlimePawn* player)
+void Attack::AttackTick(AEnemyCharacter* target, ASlimePawn* player)
 {
 }
 
-void Attack::ExitAttack()
+void Attack::ExitAttack(AEnemyCharacter* target, ASlimePawn* player)
 {
 	bFinished = true;
 }

@@ -10,11 +10,11 @@ public:
 	virtual ~Attack() = default;
 
 
-	virtual void OnAttack(AActor* target, ASlimePawn* player);
+	virtual void AttackStart(AEnemyCharacter* target, ASlimePawn* player);
 
-	virtual void ExecuteAttack(AEnemyCharacter* target, ASlimePawn* player);
+	virtual void AttackTick(AEnemyCharacter* target, ASlimePawn* player);
 
-	virtual void ExitAttack();
+	virtual void ExitAttack(AEnemyCharacter* target, ASlimePawn* player);
 	
 	
 	bool bFinished = false;
